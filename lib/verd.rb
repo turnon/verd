@@ -68,5 +68,14 @@ module Verd
       to_h.to_json
     end
 
+    def to_html
+      tmpl = File.join(__dir__, 'verd', 'template.html')
+      File.read(tmpl).sub(/\/\/start-sub.*\/\/end-sub/m, to_json)
+    end
+
+    def write_html
+      path = File.join Rails.root.to_s, 'verd.html'
+      File.open(path, 'w'){ |f| f.puts to_html }
+    end
   end
 end
