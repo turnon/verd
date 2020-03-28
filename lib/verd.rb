@@ -16,14 +16,16 @@ module Verd
     def relations
       @relations ||= domain.relationships.each_with_object({}) do |rel, rs|
         next if rel.destination.model.nil? || rel.source.model.nil?
-       rs[[rel.destination.model, rel.source.model]] = rel
-      end.values
+       rs[[rel.source.model, rel.destination.model]] = rel
+      end.values.sort_by do |rel|
+        [rel.source.model.name, rel.destination.model.name]
+      end
     end
 
     def models
       @models ||= relations.each_with_object(Set.new) do |rel, s|
         s << rel.destination.model << rel.source.model
-      end
+      end.sort_by(&:name)
     end
 
     def nodes
@@ -37,15 +39,9 @@ module Verd
     end
 
     def links
-      arr = []
-      relations.each_with_index do |rel, i|
-        arr << {
-          id: i,
-          source: rel.source.model.name,
-          target: rel.destination.model.name
-        }
+      relations.map do |rel|
+        {source: rel.source.model.name, target: rel.destination.model.name}
       end
-      arr
     end
 
     def categories
@@ -57,7 +53,7 @@ module Verd
     def plain_categories
       @categories ||= models.each_with_object(Set.new) do |m, s|
         s << m.source_dir
-      end.to_a
+      end.sort
     end
 
     def to_h
@@ -65,8 +61,17 @@ module Verd
     end
 
     def to_json
-      to_h.to_json
+      JSON.pretty_generate(to_h)
     end
 
+    def to_html
+      tmpl = File.join(__dir__, 'verd', 'template.html')
+      File.read(tmpl).sub(/\/\/start-sub.*\/\/end-sub/m, to_json)
+    end
+
+    def write_html
+      path = File.join Rails.root.to_s, 'verd.html'
+      File.open(path, 'w'){ |f| f.puts to_html }
+    end
   end
 end
