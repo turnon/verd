@@ -30,7 +30,6 @@ module Verd
       models.map do |model|
         category = plain_categories.index(model.source_dir)
         {
-          id: model.object_id.to_s,
           name: model.name,
           category: category
         }
@@ -42,8 +41,8 @@ module Verd
       relations.each_with_index do |rel, i|
         arr << {
           id: i,
-          source: rel.source.model.object_id.to_s,
-          target: rel.destination.model.object_id.to_s
+          source: rel.source.model.name,
+          target: rel.destination.model.name
         }
       end
       arr
