@@ -6,7 +6,7 @@ require "rails_erd/domain"
 
 module Verd
 
-  class Graph
+  module Domain
     attr_reader :domain
 
     def initialize
@@ -27,6 +27,29 @@ module Verd
         s << rel.destination.model << rel.source.model
       end.sort_by(&:name)
     end
+
+    def to_h
+      {nodes: nodes, links: links, categories: categories}
+    end
+
+    def to_json
+      JSON.pretty_generate(to_h)
+    end
+
+    def to_html
+      tmpl = File.join(__dir__, 'verd', 'template.html')
+      File.read(tmpl).sub(/\/\/start-sub.*\/\/end-sub/m, to_json)
+    end
+
+    def write_html
+      name = "verd.#{self.class.name.split(/::/).last.underscore}.html"
+      path = File.join(Rails.root.to_s, name)
+      File.open(path, 'w'){ |f| f.puts to_html }
+    end
+  end
+
+  class ModelGraph
+    include Domain
 
     def nodes
       models.map do |model|
@@ -50,28 +73,18 @@ module Verd
       end
     end
 
+    private
+
     def plain_categories
       @categories ||= models.each_with_object(Set.new) do |m, s|
         s << m.source_dir
       end.sort
     end
-
-    def to_h
-      {nodes: nodes, links: links, categories: categories}
-    end
-
-    def to_json
-      JSON.pretty_generate(to_h)
-    end
-
-    def to_html
-      tmpl = File.join(__dir__, 'verd', 'template.html')
-      File.read(tmpl).sub(/\/\/start-sub.*\/\/end-sub/m, to_json)
-    end
-
-    def write_html
-      path = File.join Rails.root.to_s, 'verd.html'
-      File.open(path, 'w'){ |f| f.puts to_html }
-    end
   end
+
+  class DetailGraph
+    include Domain
+
+  end
+
 end

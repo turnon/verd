@@ -10,7 +10,7 @@ namespace :verd do
   end
 
   task :generate => ['erd:options', 'erd:load_models', 'assign_source_location'] do
-    g = Verd::Graph.new
+    g = Verd::ModelGraph.new
     #pp g.links
     #pp g.nodes
     #pp g.categories
