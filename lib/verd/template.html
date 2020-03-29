@@ -29,41 +29,33 @@
   </div>
 
   <div id="graph">
-    <v-chart :options="opts" theme="light" autoresize/>
+    <v-chart :options="opts" theme="light" autoresize />
   </div>
 
   <script>
     (function () {
-      let associations = [{
-        src: 'A',
-        dest: 'B'
-      },
+
+      let graph =
+      //start-sub
       {
-        src: 'A',
-        dest: 'C'
-      },
-      {
-        src: 'D',
-        dest: 'E'
-      },
-      {
-        src: 'D',
-        dest: 'F'
+        "nodes": [{ "name": "n1", "category": 0 }, { "name": "n2", "category": 1 }, { "name": "n3", "category": 2 }],
+        "links": [{ "id": 0, "source": "n1", "target": "n2" }, { "id": 1, "source": "n2", "target": "n3" }, { "id": 2, "source": "n3", "target": "n1" }],
+        "categories": [{ "name": "/A" }, { "name": "/B" }, { "name": "/C" }]
       }
-      ]
+      //end-sub
 
       let group_by_src = {}
 
-      associations.forEach((asso) => {
-        if (!group_by_src[asso.src]) {
-          group_by_src[asso.src] = {
-            title: asso.src,
+      graph.links.forEach((link) => {
+        if (!group_by_src[link.source]) {
+          group_by_src[link.source] = {
+            title: link.source,
             expand: true,
             children: []
           }
         }
-        group_by_src[asso.src].children.push({
-          title: asso.dest
+        group_by_src[link.source].children.push({
+          title: link.target
         })
       })
 
@@ -77,15 +69,6 @@
         },
         methods: {}
       })
-
-      let graph =
-      //start-sub
-      {
-        "nodes": [{ "name": "n1", "category": 0 }, { "name": "n2", "category": 1 }, { "name": "n3", "category": 2 }],
-        "links": [{ "id": 0, "source": "n1", "target": "n2" }, { "id": 1, "source": "n2", "target": "n3" }, { "id": 2, "source": "n3", "target": "n1" }],
-        "categories": [{ "name": "/A" }, { "name": "/B" }, { "name": "/C" }]
-      }
-      //end-sub
 
       Vue.component('v-chart', VueECharts)
       new Vue({
