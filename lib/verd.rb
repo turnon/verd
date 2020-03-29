@@ -3,6 +3,7 @@ require "verd/railtie" if defined? Rails
 require "verd/active_record_base"
 require "verd/dependencies"
 require "rails_erd/domain"
+require "verd/rails_erd_domain_relationship"
 
 module Verd
 
@@ -39,9 +40,7 @@ module Verd
     end
 
     def links
-      relations.map do |rel|
-        {source: rel.source.model.name, target: rel.destination.model.name}
-      end
+      relations.map(&:verd_link)
     end
 
     def categories

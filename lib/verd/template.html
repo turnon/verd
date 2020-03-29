@@ -74,7 +74,7 @@
       //start-sub
       {
         "nodes": [{ "name": "n1", "category": 0 }, { "name": "n2", "category": 1 }, { "name": "n3", "category": 2 }],
-        "links": [{ "id": 0, "source": "n1", "target": "n2" }, { "id": 1, "source": "n2", "target": "n3" }, { "id": 1, "source": "n3", "target": "n1" }],
+        "links": [{ "id": 0, "source": "n1", "target": "n2" }, { "id": 1, "source": "n2", "target": "n3" }, { "id": 2, "source": "n3", "target": "n1" }],
         "categories": [{ "name": "/A" }, { "name": "/B" }, { "name": "/C" }]
       }
       //end-sub
@@ -122,6 +122,7 @@
                 color: 'source',
                 // curveness: 0.3
               },
+              edgeSymbolSize: 15,
               emphasis: {
                 lineStyle: {
                   width: 10
