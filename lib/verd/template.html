@@ -4,6 +4,14 @@
 <head>
   <meta charset="utf-8">
   <title>erd</title>
+  <style>
+    html,
+    body,
+    #graph {
+      height: 100%;
+      overflow: hidden;
+    }
+  </style>
   <link rel="stylesheet" type="text/css" href="http://unpkg.com/view-design/dist/styles/iview.css">
   <script type="text/javascript" src="http://vuejs.org/js/vue.min.js"></script>
   <script type="text/javascript" src="http://unpkg.com/view-design/dist/iview.min.js"></script>
@@ -20,8 +28,8 @@
     <Button @click="filter = !filter" type="primary">Open</Button>
   </div>
 
-  <div id="graph" style="height: 100%">
-    <v-chart :options="opts" theme="light" />
+  <div id="graph">
+    <v-chart :options="opts" theme="light" autoresize/>
   </div>
 
   <script>
@@ -132,6 +140,12 @@
           }
         },
         methods: {}
+      })
+
+      setTimeout(() => {
+        let chart = document.querySelector(".echarts")
+        chart.style.width = "100%"
+        chart.style.height = "100%"
       })
     })()
   </script>
