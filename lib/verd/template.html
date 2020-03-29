@@ -23,7 +23,7 @@
 <body>
   <div id="filter-panel">
     <Drawer placement="left" v-model="filter" :mask-closable="false" :mask="false" :draggable="true" :transfer="false">
-      <Tree :data="relations" show-checkbox />
+      <Tree :data="relations" show-checkbox @on-check-change="selectRelation($event)" />
     </Drawer>
     <Button @click="filter = !filter" type="primary">Open</Button>
   </div>
@@ -38,25 +38,34 @@
       let graph =
       //start-sub
       {
-        "nodes": [{ "name": "n1", "category": 0 }, { "name": "n2", "category": 1 }, { "name": "n3", "category": 2 }],
-        "links": [{ "id": 0, "source": "n1", "target": "n2" }, { "id": 1, "source": "n2", "target": "n3" }, { "id": 2, "source": "n3", "target": "n1" }],
+        "nodes": [{ "name": "n1", "category": 0 }, { "name": "n2", "category": 1 }, { "name": "n3", "category": 2 }, { "name": "n4", "category": 2 }],
+        "links": [{ "id": 0, "source": "n1", "target": "n2" }, { "id": 1, "source": "n2", "target": "n3" }, { "id": 2, "source": "n3", "target": "n1" }, { "id": 3, "source": "n3", "target": "n4" }],
         "categories": [{ "name": "/A" }, { "name": "/B" }, { "name": "/C" }]
       }
       //end-sub
 
-      let group_by_src = {}
-
-      graph.links.forEach((link) => {
-        if (!group_by_src[link.source]) {
-          group_by_src[link.source] = {
-            title: link.source,
-            expand: true,
-            children: []
+      let group_by_src = {},
+        add_to_group = (link, i) => {
+          if (!group_by_src[link.source]) {
+            group_by_src[link.source] = {
+              title: link.source,
+              expand: true,
+              children: []
+            }
           }
+          group_by_src[link.source].children.push({
+            link_idx: i,
+            title: link.target
+          })
         }
-        group_by_src[link.source].children.push({
-          title: link.target
-        })
+
+      graph.links.forEach((link, i) => {
+        link.lineStyle = { opacity: 0.5, width: 1 }
+        add_to_group(link, i)
+      })
+
+      graph.nodes.forEach((node, i) => {
+        node.itemStyle = { opacity: 1 }
       })
 
       let relations = Object.values(group_by_src)
@@ -67,7 +76,49 @@
           filter: false,
           relations: relations
         },
-        methods: {}
+        methods: {
+          selectRelation(checkeds) {
+            let checked_links = new Set(),
+              checked_nodes = new Set()
+
+            checkeds.forEach((c) => {
+              if (c.link_idx) {
+                checked_links.add(c.link_idx)
+                checked_nodes.add(graph.links[c.link_idx].source)
+              }
+              checked_nodes.add(c.title)
+            })
+
+            if (checked_nodes.size === 0) {
+              graph.links.forEach((link) => {
+                link.lineStyle.width = 1
+                link.lineStyle.opacity = 1
+              })
+              graph.nodes.forEach((node) => {
+                node.itemStyle.opacity = 1
+              })
+              return
+            }
+
+            graph.links.forEach((link, i) => {
+              if (checked_links.has(i)) {
+                link.lineStyle.width = 10
+                link.lineStyle.opacity = 1
+              } else {
+                link.lineStyle.width = 1
+                link.lineStyle.opacity = 0.1
+              }
+            })
+
+            graph.nodes.forEach((node, i) => {
+              if (checked_nodes.has(node.name)) {
+                node.itemStyle.opacity = 1
+              } else {
+                node.itemStyle.opacity = 0.1
+              }
+            })
+          }
+        }
       })
 
       Vue.component('v-chart', VueECharts)
@@ -98,7 +149,7 @@
               links: graph.links,
               categories: graph.categories,
               roam: true,
-              focusNodeAdjacency: true,
+              // focusNodeAdjacency: true,
               itemStyle: {
                 borderColor: '#fff',
                 borderWidth: 1,
