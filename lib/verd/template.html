@@ -7,7 +7,7 @@
   <style>
     html,
     body,
-    #graph {
+    #app {
       height: 100%;
       overflow: hidden;
     }
@@ -21,167 +21,210 @@
 </head>
 
 <body>
-  <div id="filter-panel">
+  <div id="app">
     <Drawer placement="left" v-model="filter" :mask-closable="false" :mask="false" :draggable="true" :transfer="false">
-      <Tree :data="relations" show-checkbox @on-check-change="selectRelation($event)" />
+      <Tree :data="relations" show-checkbox @on-check-change="selectRelation($event)" ref="filter-panel" />
     </Drawer>
     <Button @click="filter = !filter" type="primary">Open</Button>
-  </div>
 
-  <div id="graph">
-    <v-chart :options="opts" theme="light" autoresize />
+    <v-chart :options="opts" theme="light" autoresize @click="handleClick($event)" />
   </div>
 
   <script>
-    (function () {
+    // (function () {
 
-      let graph =
+    let graph =
       //start-sub
       {
-        "nodes": [{ "name": "n1", "category": 0 }, { "name": "n2", "category": 1 }, { "name": "n3", "category": 2 }, { "name": "n4", "category": 2 }],
-        "links": [{ "id": 0, "source": "n1", "target": "n2" }, { "id": 1, "source": "n2", "target": "n3" }, { "id": 2, "source": "n3", "target": "n1" }, { "id": 3, "source": "n3", "target": "n4" }],
-        "categories": [{ "name": "/A" }, { "name": "/B" }, { "name": "/C" }]
+        "nodes": [{
+          "name": "n1",
+          "category": 0
+        }, {
+          "name": "n2",
+          "category": 1
+        }, {
+          "name": "n3",
+          "category": 2
+        }, {
+          "name": "n4",
+          "category": 2
+        }],
+        "links": [{
+          "source": "n1",
+          "target": "n2"
+        }, {
+          "source": "n2",
+          "target": "n3"
+        }, {
+          "source": "n3",
+          "target": "n1"
+        }, {
+          "source": "n3",
+          "target": "n4"
+        }],
+        "categories": [{
+          "name": "/A"
+        }, {
+          "name": "/B"
+        }, {
+          "name": "/C"
+        }]
       }
-      //end-sub
+    //end-sub
 
-      let group_by_src = {},
-        add_to_group = (link, i) => {
-          if (!group_by_src[link.source]) {
-            group_by_src[link.source] = {
-              title: link.source,
-              expand: true,
-              children: []
-            }
+    let group_by_src = {},
+      children_checkboxes = [],
+      add_to_group = (link, i) => {
+        if (!group_by_src[link.source]) {
+          group_by_src[link.source] = {
+            title: link.source,
+            expand: true,
+            checked: false,
+            children: []
           }
-          group_by_src[link.source].children.push({
-            link_idx: i,
-            title: link.target
+        }
+
+        let child_checkbox = {
+          link_idx: i,
+          title: link.target,
+          checked: false
+        }
+        children_checkboxes[i] = child_checkbox
+        group_by_src[link.source].children.push(child_checkbox)
+      }
+
+    graph.links.forEach((link, i) => {
+      link.i = i
+      link.lineStyle = {
+        opacity: 0.5,
+        width: 1
+      }
+      add_to_group(link, i)
+    })
+
+    graph.nodes.forEach((node, i) => {
+      node.itemStyle = {
+        opacity: 1
+      }
+    })
+
+    let relations = Object.values(group_by_src)
+    console.log(relations)
+
+
+    let opts = {
+      // title: {
+      //   text: 'Les Miserables',
+      //   subtext: 'Default layout',
+      //   top: 'bottom',
+      //   left: 'right'
+      // },
+      tooltip: {},
+      legend: [{
+        // selectedMode: 'single',
+        data: graph.categories.map(function (a) {
+          return a.name;
+        })
+      }],
+      animationDuration: 1500,
+      animationEasingUpdate: 'quinticInOut',
+      series: [{
+        name: 'Les Miserables',
+        type: 'graph',
+        layout: 'force',
+        data: graph.nodes,
+        links: graph.links,
+        categories: graph.categories,
+        roam: true,
+        // focusNodeAdjacency: true,
+        itemStyle: {
+          borderColor: '#fff',
+          borderWidth: 1,
+          shadowBlur: 10,
+          shadowColor: 'rgba(0, 0, 0, 0.3)'
+        },
+        label: {
+          position: 'right',
+          formatter: '{b}'
+        },
+        lineStyle: {
+          color: 'source',
+          // curveness: 0.3
+        },
+        edgeSymbolSize: 15,
+        emphasis: {
+          lineStyle: {
+            width: 10
+          }
+        }
+      }]
+    }
+
+    Vue.component('v-chart', VueECharts)
+    new Vue({
+      el: '#app',
+      data: {
+        filter: false,
+        opts: opts,
+        relations: relations
+      },
+      methods: {
+        selectRelation(checkeds) {
+          let checked_links = new Set(),
+            checked_nodes = new Set()
+
+          checkeds.forEach((c) => {
+            if (c.link_idx) {
+              checked_links.add(c.link_idx)
+              checked_nodes.add(graph.links[c.link_idx].source)
+            }
+            checked_nodes.add(c.title)
           })
-        }
 
-      graph.links.forEach((link, i) => {
-        link.lineStyle = { opacity: 0.5, width: 1 }
-        add_to_group(link, i)
-      })
-
-      graph.nodes.forEach((node, i) => {
-        node.itemStyle = { opacity: 1 }
-      })
-
-      let relations = Object.values(group_by_src)
-
-      new Vue({
-        el: '#filter-panel',
-        data: {
-          filter: false,
-          relations: relations
-        },
-        methods: {
-          selectRelation(checkeds) {
-            let checked_links = new Set(),
-              checked_nodes = new Set()
-
-            checkeds.forEach((c) => {
-              if (c.link_idx) {
-                checked_links.add(c.link_idx)
-                checked_nodes.add(graph.links[c.link_idx].source)
-              }
-              checked_nodes.add(c.title)
+          if (checked_nodes.size === 0) {
+            graph.links.forEach((link) => {
+              link.lineStyle.width = 1
+              link.lineStyle.opacity = 1
             })
+            graph.nodes.forEach((node) => {
+              node.itemStyle.opacity = 1
+            })
+            return
+          }
 
-            if (checked_nodes.size === 0) {
-              graph.links.forEach((link) => {
-                link.lineStyle.width = 1
-                link.lineStyle.opacity = 1
-              })
-              graph.nodes.forEach((node) => {
-                node.itemStyle.opacity = 1
-              })
-              return
+          graph.links.forEach((link, i) => {
+            if (checked_links.has(i)) {
+              link.lineStyle.width = 10
+              link.lineStyle.opacity = 1
+            } else {
+              link.lineStyle.width = 1
+              link.lineStyle.opacity = 0.1
             }
+          })
 
-            graph.links.forEach((link, i) => {
-              if (checked_links.has(i)) {
-                link.lineStyle.width = 10
-                link.lineStyle.opacity = 1
-              } else {
-                link.lineStyle.width = 1
-                link.lineStyle.opacity = 0.1
-              }
-            })
-
-            graph.nodes.forEach((node, i) => {
-              if (checked_nodes.has(node.name)) {
-                node.itemStyle.opacity = 1
-              } else {
-                node.itemStyle.opacity = 0.1
-              }
-            })
-          }
-        }
-      })
-
-      Vue.component('v-chart', VueECharts)
-      new Vue({
-        el: '#graph',
-        data: {
-          opts: {
-            // title: {
-            //   text: 'Les Miserables',
-            //   subtext: 'Default layout',
-            //   top: 'bottom',
-            //   left: 'right'
-            // },
-            tooltip: {},
-            legend: [{
-              // selectedMode: 'single',
-              data: graph.categories.map(function (a) {
-                return a.name;
-              })
-            }],
-            animationDuration: 1500,
-            animationEasingUpdate: 'quinticInOut',
-            series: [{
-              name: 'Les Miserables',
-              type: 'graph',
-              layout: 'force',
-              data: graph.nodes,
-              links: graph.links,
-              categories: graph.categories,
-              roam: true,
-              // focusNodeAdjacency: true,
-              itemStyle: {
-                borderColor: '#fff',
-                borderWidth: 1,
-                shadowBlur: 10,
-                shadowColor: 'rgba(0, 0, 0, 0.3)'
-              },
-              label: {
-                position: 'right',
-                formatter: '{b}'
-              },
-              lineStyle: {
-                color: 'source',
-                // curveness: 0.3
-              },
-              edgeSymbolSize: 15,
-              emphasis: {
-                lineStyle: {
-                  width: 10
-                }
-              }
-            }]
-          }
+          graph.nodes.forEach((node, i) => {
+            if (checked_nodes.has(node.name)) {
+              node.itemStyle.opacity = 1
+            } else {
+              node.itemStyle.opacity = 0.1
+            }
+          })
         },
-        methods: {}
-      })
+        handleClick(e) {
+          let box = children_checkboxes[e.data.i]
+          box.checked = !box.checked
+          let checkeds = this.$refs['filter-panel'].getCheckedNodes()
+          this.selectRelation(checkeds)
+        }
+      }
+    })
 
-      setTimeout(() => {
-        let chart = document.querySelector(".echarts")
-        chart.style.width = "100%"
-        chart.style.height = "100%"
-      })
-    })()
+    setTimeout(() => {
+      let chart = document.querySelector(".echarts")
+      chart.style.width = "100%"
+      chart.style.height = "100%"
+    })
+    // })()
   </script>
 </body>
 
