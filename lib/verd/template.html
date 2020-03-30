@@ -7,7 +7,7 @@
   <style>
     html,
     body,
-    #graph {
+    #app {
       height: 100%;
       overflow: hidden;
     }
@@ -21,133 +21,236 @@
 </head>
 
 <body>
-  <div id="filter-panel">
+  <div id="app">
     <Drawer placement="left" v-model="filter" :mask-closable="false" :mask="false" :draggable="true" :transfer="false">
-      <Tree :data="relations" show-checkbox />
+      <Tree :data="relations" show-checkbox @on-check-change="selectRelation($event)" ref="filter-panel" />
     </Drawer>
     <Button @click="filter = !filter" type="primary">Open</Button>
-  </div>
 
-  <div id="graph">
-    <v-chart :options="opts" theme="light" autoresize/>
+    <v-chart :options="opts" theme="light" autoresize @click="handleClick($event)" />
   </div>
 
   <script>
-    (function () {
-      let associations = [{
-        src: 'A',
-        dest: 'B'
-      },
+    // (function () {
+
+    let graph =
+      //start-sub
       {
-        src: 'A',
-        dest: 'C'
-      },
-      {
-        src: 'D',
-        dest: 'E'
-      },
-      {
-        src: 'D',
-        dest: 'F'
+        "nodes": [{
+          "name": "n1",
+          "category": 0
+        }, {
+          "name": "n2",
+          "category": 1
+        }, {
+          "name": "n3",
+          "category": 2
+        }, {
+          "name": "n4",
+          "category": 2
+        }],
+        "links": [{
+          "source": "n1",
+          "target": "n2"
+        }, {
+          "source": "n2",
+          "target": "n3"
+        }, {
+          "source": "n3",
+          "target": "n1"
+        }, {
+          "source": "n3",
+          "target": "n4"
+        }],
+        "categories": [{
+          "name": "/A"
+        }, {
+          "name": "/B"
+        }, {
+          "name": "/C"
+        }]
       }
-      ]
+    //end-sub
 
-      let group_by_src = {}
-
-      associations.forEach((asso) => {
-        if (!group_by_src[asso.src]) {
-          group_by_src[asso.src] = {
-            title: asso.src,
+    let source_checkboxes = {},
+      target_checkboxes = [],
+      add_to_checkboxs_tree = (link, i) => {
+        if (!source_checkboxes[link.source]) {
+          source_checkboxes[link.source] = {
+            title: link.source,
             expand: true,
+            checked: false,
+            indeterminate: false,
             children: []
           }
         }
-        group_by_src[asso.src].children.push({
-          title: asso.dest
-        })
-      })
 
-      let relations = Object.values(group_by_src)
-
-      new Vue({
-        el: '#filter-panel',
-        data: {
-          filter: false,
-          relations: relations
-        },
-        methods: {}
-      })
-
-      let graph =
-      //start-sub
-      {
-        "nodes": [{ "name": "n1", "category": 0 }, { "name": "n2", "category": 1 }, { "name": "n3", "category": 2 }],
-        "links": [{ "id": 0, "source": "n1", "target": "n2" }, { "id": 1, "source": "n2", "target": "n3" }, { "id": 2, "source": "n3", "target": "n1" }],
-        "categories": [{ "name": "/A" }, { "name": "/B" }, { "name": "/C" }]
+        let child_checkbox = {
+          link_idx: i,
+          title: link.target,
+          checked: false
+        }
+        target_checkboxes[i] = child_checkbox
+        source_checkboxes[link.source].children.push(child_checkbox)
       }
-      //end-sub
 
-      Vue.component('v-chart', VueECharts)
-      new Vue({
-        el: '#graph',
-        data: {
-          opts: {
-            // title: {
-            //   text: 'Les Miserables',
-            //   subtext: 'Default layout',
-            //   top: 'bottom',
-            //   left: 'right'
-            // },
-            tooltip: {},
-            legend: [{
-              // selectedMode: 'single',
-              data: graph.categories.map(function (a) {
-                return a.name;
-              })
-            }],
-            animationDuration: 1500,
-            animationEasingUpdate: 'quinticInOut',
-            series: [{
-              name: 'Les Miserables',
-              type: 'graph',
-              layout: 'force',
-              data: graph.nodes,
-              links: graph.links,
-              categories: graph.categories,
-              roam: true,
-              focusNodeAdjacency: true,
-              itemStyle: {
-                borderColor: '#fff',
-                borderWidth: 1,
-                shadowBlur: 10,
-                shadowColor: 'rgba(0, 0, 0, 0.3)'
-              },
-              label: {
-                position: 'right',
-                formatter: '{b}'
-              },
-              lineStyle: {
-                color: 'source',
-                // curveness: 0.3
-              },
-              edgeSymbolSize: 15,
-              emphasis: {
-                lineStyle: {
-                  width: 10
-                }
-              }
-            }]
-          }
+    graph.links.forEach((link, i) => {
+      link.idx = i
+      link.lineStyle = {
+        opacity: 0.5,
+        width: 1
+      }
+      add_to_checkboxs_tree(link, i)
+    })
+
+    graph.nodes.forEach((node, i) => {
+      node.itemStyle = {
+        opacity: 1
+      }
+    })
+
+    let relations = Object.values(source_checkboxes)
+    // console.log(relations)
+
+
+    let opts = {
+      // title: {
+      //   text: 'Les Miserables',
+      //   subtext: 'Default layout',
+      //   top: 'bottom',
+      //   left: 'right'
+      // },
+      tooltip: {},
+      legend: [{
+        // selectedMode: 'single',
+        top: "middle",
+        right: "5%",
+        orient: "vertical",
+        data: graph.categories.map(function (a) {
+          return a.name;
+        })
+      }],
+      animationDuration: 1500,
+      animationEasingUpdate: 'quinticInOut',
+      series: [{
+        name: 'Les Miserables',
+        type: 'graph',
+        layout: 'force',
+        data: graph.nodes,
+        links: graph.links,
+        categories: graph.categories,
+        roam: true,
+        // focusNodeAdjacency: true,
+        itemStyle: {
+          borderColor: '#fff',
+          borderWidth: 1,
+          shadowBlur: 10,
+          shadowColor: 'rgba(0, 0, 0, 0.3)'
         },
-        methods: {}
-      })
+        label: {
+          position: 'right',
+          formatter: '{b}'
+        },
+        lineStyle: {
+          color: 'source',
+          // curveness: 0.3
+        },
+        edgeSymbolSize: 15,
+        emphasis: {
+          lineStyle: {
+            width: 10
+          }
+        }
+      }]
+    }
 
-      setTimeout(() => {
-        let chart = document.querySelector(".echarts")
-        chart.style.width = "100%"
-        chart.style.height = "100%"
-      })
-    })()
+    Vue.component('v-chart', VueECharts)
+    new Vue({
+      el: '#app',
+      data: {
+        filter: false,
+        opts: opts,
+        relations: relations
+      },
+      methods: {
+        selectRelation(checkeds) {
+          let checked_links = new Set(),
+            checked_nodes = new Set()
+
+          checkeds.forEach((c) => {
+            if (c.link_idx) {
+              checked_links.add(c.link_idx)
+              checked_nodes.add(graph.links[c.link_idx].source)
+            }
+            checked_nodes.add(c.title)
+          })
+
+          if (checked_nodes.size === 0) {
+            graph.links.forEach((link) => {
+              link.lineStyle.width = 1
+              link.lineStyle.opacity = 1
+            })
+            graph.nodes.forEach((node) => {
+              node.itemStyle.opacity = 1
+            })
+            return
+          }
+
+          graph.links.forEach((link, i) => {
+            if (checked_links.has(i)) {
+              link.lineStyle.width = 10
+              link.lineStyle.opacity = 1
+            } else {
+              link.lineStyle.width = 1
+              link.lineStyle.opacity = 0.1
+            }
+          })
+
+          graph.nodes.forEach((node, i) => {
+            if (checked_nodes.has(node.name)) {
+              node.itemStyle.opacity = 1
+            } else {
+              node.itemStyle.opacity = 0.1
+            }
+          })
+        },
+        handleClick(e) {
+          let link = e.data,
+            target_box = target_checkboxes[link.idx],
+            source_box = source_checkboxes[link.source]
+
+          target_box.checked = !target_box.checked
+
+          let checked_targets_count = source_box.children.reduce((count, c) => {
+            count = c.checked ? count + 1 : count
+            return count
+          }, 0)
+
+          if (checked_targets_count === 0) {
+            source_box.checked = false
+            source_box.indeterminate = false
+          } else if (checked_targets_count === source_box.children.length) {
+            source_box.checked = true
+            source_box.indeterminate = false
+          } else {
+            source_box.checked = false
+            source_box.indeterminate = true
+          }
+
+          this.$nextTick(() => {
+            let checkeds = this.$refs['filter-panel'].getCheckedAndIndeterminateNodes()
+            this.selectRelation(checkeds)
+          })
+        }
+      }
+    })
+
+    setTimeout(() => {
+      let chart = document.querySelector(".echarts")
+      chart.style.width = "100%"
+      chart.style.height = "100%"
+    })
+    // })()
   </script>
 </body>
 
