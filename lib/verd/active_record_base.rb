@@ -13,5 +13,13 @@ class ActiveRecord::Base
       attribute_names.each_with_object({}){ |attr, h| h[attr] = human_attribute_name(attr) }
     end
 
+    def verd_columns
+      columns.map{|c| "#{c.name} : #{c.sql_type}"}
+    end
+
+    def verd_indexes
+      connection.indexes(table_name).sort_by(&:columns).
+        map{|idx| {cols: idx.columns, uniq: idx.unique} }
+    end
   end
 end
