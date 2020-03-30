@@ -72,14 +72,15 @@
       }
     //end-sub
 
-    let group_by_src = {},
-      children_checkboxes = [],
-      add_to_group = (link, i) => {
-        if (!group_by_src[link.source]) {
-          group_by_src[link.source] = {
+    let source_checkboxes = {},
+      target_checkboxes = [],
+      add_to_checkboxs_tree = (link, i) => {
+        if (!source_checkboxes[link.source]) {
+          source_checkboxes[link.source] = {
             title: link.source,
             expand: true,
             checked: false,
+            indeterminate: false,
             children: []
           }
         }
@@ -89,17 +90,17 @@
           title: link.target,
           checked: false
         }
-        children_checkboxes[i] = child_checkbox
-        group_by_src[link.source].children.push(child_checkbox)
+        target_checkboxes[i] = child_checkbox
+        source_checkboxes[link.source].children.push(child_checkbox)
       }
 
     graph.links.forEach((link, i) => {
-      link.i = i
+      link.idx = i
       link.lineStyle = {
         opacity: 0.5,
         width: 1
       }
-      add_to_group(link, i)
+      add_to_checkboxs_tree(link, i)
     })
 
     graph.nodes.forEach((node, i) => {
@@ -108,8 +109,8 @@
       }
     })
 
-    let relations = Object.values(group_by_src)
-    console.log(relations)
+    let relations = Object.values(source_checkboxes)
+    // console.log(relations)
 
 
     let opts = {
@@ -211,10 +212,26 @@
           })
         },
         handleClick(e) {
-          let box = children_checkboxes[e.data.i]
-          box.checked = !box.checked
-          let checkeds = this.$refs['filter-panel'].getCheckedNodes()
-          this.selectRelation(checkeds)
+          let link = e.data,
+            target_box = target_checkboxes[link.idx],
+            source_box = source_checkboxes[link.source]
+
+          target_box.checked = !target_box.checked
+          if (source_box.children.every((c) => { return !c.checked })) {
+            source_box.checked = false
+            source_box.indeterminate = false
+          } else if (source_box.children.every((c) => { return c.checked })) {
+            source_box.checked = true
+            source_box.indeterminate = false
+          } else {
+            source_box.checked = false
+            source_box.indeterminate = true
+          }
+
+          this.$nextTick(() => {
+            let checkeds = this.$refs['filter-panel'].getCheckedAndIndeterminateNodes()
+            this.selectRelation(checkeds)
+          })
         }
       }
     })
