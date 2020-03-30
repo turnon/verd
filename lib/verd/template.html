@@ -217,10 +217,16 @@
             source_box = source_checkboxes[link.source]
 
           target_box.checked = !target_box.checked
-          if (source_box.children.every((c) => { return !c.checked })) {
+
+          let checked_targets_count = source_box.children.reduce((count, c) => {
+            count = c.checked ? count + 1 : count
+            return count
+          }, 0)
+
+          if (checked_targets_count === 0) {
             source_box.checked = false
             source_box.indeterminate = false
-          } else if (source_box.children.every((c) => { return c.checked })) {
+          } else if (checked_targets_count === source_box.children.length) {
             source_box.checked = true
             source_box.indeterminate = false
           } else {
