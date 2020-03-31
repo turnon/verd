@@ -7,21 +7,22 @@ module RailsERD
       HasOneSym = 'triangle'
 
       def verd_link
-        src, tar, sym = nil, nil, nil
+        src, tar, macro = nil, nil, nil
 
         associations.each do |asso|
           if asso.macro == :has_many
-            src, tar, sym = asso.active_record.to_s, asso.klass.to_s, HasManySym
+            src, tar, macro = asso.active_record.to_s, asso.klass.to_s, :has_many
             break
           elsif asso.macro == :has_one
-            src, tar, sym = asso.active_record.to_s, asso.klass.to_s, HasOneSym
+            src, tar, macro = asso.active_record.to_s, asso.klass.to_s, :has_one
           else
-            break if sym
-            src, tar, sym = asso.klass.to_s, asso.active_record.to_s, HasManySym
+            break if macro
+            src, tar, macro = asso.klass.to_s, asso.active_record.to_s, :has_many
           end
         end
 
-        {source: src, target: tar, symbol: [NoneSym, sym]}
+        sym = macro == :has_many ? HasManySym : HasOneSym
+        {source: src, target: tar, macro: macro, symbol: [NoneSym, sym]}
       end
     end
   end

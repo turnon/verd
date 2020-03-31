@@ -74,6 +74,9 @@
 
     let source_checkboxes = {},
       target_checkboxes = [],
+      child_renderer = (h, { data }) => {
+        return h('span', `${data.macro} ${data.title}`);
+      },
       add_to_checkboxs_tree = (link, i) => {
         if (!source_checkboxes[link.source]) {
           source_checkboxes[link.source] = {
@@ -88,6 +91,8 @@
         let child_checkbox = {
           link_idx: i,
           title: link.target,
+          macro: link.macro,
+          render: child_renderer,
           checked: false
         }
         target_checkboxes[i] = child_checkbox
