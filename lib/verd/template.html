@@ -11,6 +11,11 @@
       height: 100%;
       overflow: hidden;
     }
+    #switch {
+      position: fixed;
+      bottom: 5%;
+      right: 5%;
+    }
   </style>
   <link rel="stylesheet" type="text/css" href="http://unpkg.com/view-design/dist/styles/iview.css">
   <script type="text/javascript" src="http://vuejs.org/js/vue.min.js"></script>
@@ -27,7 +32,11 @@
     </Drawer>
     <Button @click="filter = !filter" type="primary">Open</Button>
 
-    <v-chart :options="opts" theme="light" autoresize @click="handleClick($event)" />
+    <v-chart :options="opts" theme="light" autoresize @click="handleClick($event)" /></v-chart>
+
+    <div id="switch">
+      <Checkbox v-model="opts.series[0].label.show">label</Checkbox>
+    </div>
   </div>
 
   <script>
@@ -140,7 +149,7 @@
       tooltip: {},
       legend: [{
         // selectedMode: 'single',
-        top: "middle",
+        top: "top",
         right: "5%",
         orient: "vertical",
         data: graph.categories.map(function (a) {
@@ -165,6 +174,7 @@
           shadowColor: 'rgba(0, 0, 0, 0.3)'
         },
         label: {
+          show: false,
           position: 'right',
           formatter: '{b}'
         },
