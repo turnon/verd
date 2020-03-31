@@ -34,7 +34,9 @@ module Verd
         category = plain_categories.index(model.source_dir)
         {
           name: model.name,
-          category: category
+          category: category,
+          schema: model.verd_columns,
+          indexes: model.verd_indexes
         }
       end
     end
