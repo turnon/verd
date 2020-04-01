@@ -11,6 +11,7 @@
       height: 100%;
       overflow: hidden;
     }
+
     #switch {
       position: fixed;
       bottom: 5%;
@@ -79,7 +80,7 @@
           "name": "/C"
         }]
       }
-    //end-sub
+      //end-sub
 
     let source_checkboxes = {},
       target_checkboxes = [],
@@ -270,7 +271,78 @@
           })
         }
       }
-    })
+    });
+
+    const Tree = (function () {
+      const node_class_name = "ivu-tree-children",
+        node_class = "." + node_class_name,
+        text_class = ".ivu-tree-title"
+
+      class Tree {
+        constructor(selector) {
+          let n = document.querySelector(selector + " " + node_class)
+          this.roots = n ? (new Node(n).this_and_siblings()) : []
+        }
+
+        show_only_when_match(fn) {
+          this.roots.forEach((n) => { n.show_only_when_match(fn) })
+        }
+      }
+
+      class Node {
+        constructor(node) {
+          this.raw_node = node
+          this.visible = true
+
+          let child = this.raw_node.querySelector(node_class)
+          this.children = child ? (new Node(child).this_and_siblings()) : []
+        }
+
+        this_and_siblings() {
+          let ss = [this],
+            s = this.raw_node.nextSibling
+
+          while (s && s.getAttribute && (s.getAttribute('class') === node_class_name)) {
+            ss.push(new Node(s))
+            s = s.nextSibling
+          }
+          return ss
+        }
+
+        show_only_when_match(fn) {
+          let text = this.raw_node.querySelector(text_class).innerText
+          if (fn(text)) {
+            this.set_sub_tree_visible()
+            return
+          }
+          this.children.forEach((c) => {
+            c.show_only_when_match(fn)
+          })
+          if (this.children.some((c) => { return c.visible })) {
+            this.set_display(true)
+            return
+          }
+          this.set_display(false)
+        }
+
+        set_display(vi) {
+          this.visible = vi
+          this.raw_node.style.display = (vi ? "block" : "none")
+
+        }
+
+        set_sub_tree_visible() {
+          this.set_display(true)
+          this.children.forEach((c) => {
+            c.set_sub_tree_visible()
+          })
+        }
+      }
+
+      return Tree
+    })()
+
+    let tree = new Tree('#app')
 
     setTimeout(() => {
       let chart = document.querySelector(".echarts")
