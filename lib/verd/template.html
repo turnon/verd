@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <title>erd</title>
+  <link rel="stylesheet" type="text/css" href="http://unpkg.com/view-design/dist/styles/iview.css">
   <style>
     html,
     body,
@@ -11,13 +12,22 @@
       height: 100%;
       overflow: hidden;
     }
+
     #switch {
       position: fixed;
       bottom: 5%;
       right: 5%;
     }
+
+    a.ivu-drawer-close {
+      margin-top: 7px;
+      right: 20px;
+    }
+
+    .ivu-drawer-body {
+      overflow-y: scroll;
+    }
   </style>
-  <link rel="stylesheet" type="text/css" href="http://unpkg.com/view-design/dist/styles/iview.css">
   <script type="text/javascript" src="http://vuejs.org/js/vue.min.js"></script>
   <script type="text/javascript" src="http://unpkg.com/view-design/dist/iview.min.js"></script>
 
@@ -28,11 +38,12 @@
 <body>
   <div id="app">
     <Drawer placement="left" v-model="filter" :mask-closable="false" :mask="false" :draggable="true" :transfer="false">
+      <i-input v-model="keyword" @on-change="searchModel" style="width: calc(100% - 27px); margin-bottom: 10px;"></i-input>
       <Tree :data="relations" show-checkbox @on-check-change="selectRelation($event)" ref="filter-panel" />
     </Drawer>
     <Button @click="filter = !filter" type="primary">Open</Button>
 
-    <v-chart :options="opts" theme="light" autoresize @click="handleClick($event)" /></v-chart>
+    <v-chart :options="opts" theme="light" autoresize @click="handleClick($event)" ></v-chart>
 
     <div id="switch">
       <Checkbox v-model="opts.series[0].label.show">label</Checkbox>
@@ -79,7 +90,7 @@
           "name": "/C"
         }]
       }
-    //end-sub
+      //end-sub
 
     let source_checkboxes = {},
       target_checkboxes = [],
@@ -195,11 +206,16 @@
     new Vue({
       el: '#app',
       data: {
+        keyword: "",
         filter: false,
         opts: opts,
         relations: relations
       },
       methods: {
+        searchModel() {
+          let kw = this.keyword === "" ? /./ : new RegExp(this.keyword)
+          tree.show_only_when_match((txt) => { return txt.match(kw) })
+        },
         selectRelation(checkeds) {
           let checked_links = new Set(),
             checked_nodes = new Set()
@@ -270,7 +286,78 @@
           })
         }
       }
-    })
+    });
+
+    const Tree = (function () {
+      const node_class_name = "ivu-tree-children",
+        node_class = "." + node_class_name,
+        text_class = ".ivu-tree-title"
+
+      class Tree {
+        constructor(selector) {
+          let n = document.querySelector(selector + " " + node_class)
+          this.roots = n ? (new Node(n).this_and_siblings()) : []
+        }
+
+        show_only_when_match(fn) {
+          this.roots.forEach((n) => { n.show_only_when_match(fn) })
+        }
+      }
+
+      class Node {
+        constructor(node) {
+          this.raw_node = node
+          this.visible = true
+
+          let child = this.raw_node.querySelector(node_class)
+          this.children = child ? (new Node(child).this_and_siblings()) : []
+        }
+
+        this_and_siblings() {
+          let ss = [this],
+            s = this.raw_node.nextSibling
+
+          while (s && s.getAttribute && (s.getAttribute('class') === node_class_name)) {
+            ss.push(new Node(s))
+            s = s.nextSibling
+          }
+          return ss
+        }
+
+        show_only_when_match(fn) {
+          let text = this.raw_node.querySelector(text_class).innerText
+          if (fn(text)) {
+            this.set_sub_tree_visible()
+            return
+          }
+          this.children.forEach((c) => {
+            c.show_only_when_match(fn)
+          })
+          if (this.children.some((c) => { return c.visible })) {
+            this.set_display(true)
+            return
+          }
+          this.set_display(false)
+        }
+
+        set_display(vi) {
+          this.visible = vi
+          this.raw_node.style.display = (vi ? "block" : "none")
+
+        }
+
+        set_sub_tree_visible() {
+          this.set_display(true)
+          this.children.forEach((c) => {
+            c.set_sub_tree_visible()
+          })
+        }
+      }
+
+      return Tree
+    })()
+
+    let tree = new Tree('#app')
 
     setTimeout(() => {
       let chart = document.querySelector(".echarts")
