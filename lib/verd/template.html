@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <title>erd</title>
+  <link rel="stylesheet" type="text/css" href="http://unpkg.com/view-design/dist/styles/iview.css">
   <style>
     html,
     body,
@@ -17,8 +18,16 @@
       bottom: 5%;
       right: 5%;
     }
+
+    a.ivu-drawer-close {
+      margin-top: 7px;
+      right: 20px;
+    }
+
+    .ivu-drawer-body {
+      overflow-y: scroll;
+    }
   </style>
-  <link rel="stylesheet" type="text/css" href="http://unpkg.com/view-design/dist/styles/iview.css">
   <script type="text/javascript" src="http://vuejs.org/js/vue.min.js"></script>
   <script type="text/javascript" src="http://unpkg.com/view-design/dist/iview.min.js"></script>
 
@@ -29,11 +38,12 @@
 <body>
   <div id="app">
     <Drawer placement="left" v-model="filter" :mask-closable="false" :mask="false" :draggable="true" :transfer="false">
+      <i-input v-model="keyword" @on-change="searchModel" style="width: calc(100% - 27px); margin-bottom: 10px;"></i-input>
       <Tree :data="relations" show-checkbox @on-check-change="selectRelation($event)" ref="filter-panel" />
     </Drawer>
     <Button @click="filter = !filter" type="primary">Open</Button>
 
-    <v-chart :options="opts" theme="light" autoresize @click="handleClick($event)" /></v-chart>
+    <v-chart :options="opts" theme="light" autoresize @click="handleClick($event)" ></v-chart>
 
     <div id="switch">
       <Checkbox v-model="opts.series[0].label.show">label</Checkbox>
@@ -196,11 +206,16 @@
     new Vue({
       el: '#app',
       data: {
+        keyword: "",
         filter: false,
         opts: opts,
         relations: relations
       },
       methods: {
+        searchModel() {
+          let kw = this.keyword === "" ? /./ : new RegExp(this.keyword)
+          tree.show_only_when_match((txt) => { return txt.match(kw) })
+        },
         selectRelation(checkeds) {
           let checked_links = new Set(),
             checked_nodes = new Set()
