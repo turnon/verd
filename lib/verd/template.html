@@ -19,6 +19,12 @@
       right: 5%;
     }
 
+    button.filter-switch {
+      position: fixed;
+      top: 2%;
+      left: 1%;
+    }
+
     a.ivu-drawer-close {
       margin-top: 7px;
       right: 20px;
@@ -45,9 +51,13 @@
       <i-input v-model="keyword" style="width: calc(100% - 27px); margin-bottom: 10px;"></i-input>
       <Tree :data="relations" show-checkbox @on-check-change="selectRelation($event)" ref="filter-panel" />
     </Drawer>
-    <Button @click="filter = !filter" type="primary">Open</Button>
 
-    <v-chart :options="opts" theme="light" autoresize @click="handleClick($event)" ></v-chart>
+    <v-chart :options="opts" theme="light" autoresize @click="handleClick($event)"></v-chart>
+
+    <i-button @click="filter = !filter" type="info" class="filter-switch">
+      filter
+      <Icon type="ios-arrow-forward" />
+    </i-button>
 
     <div id="switch">
       <Checkbox v-model="opts.series[0].label.show">label</Checkbox>
