@@ -15,14 +15,14 @@
 
     #switch {
       position: fixed;
-      bottom: 5%;
-      right: 5%;
+      bottom: 4%;
+      right: 2%;
     }
 
     button.filter-switch {
       position: fixed;
-      top: 2%;
-      left: 1%;
+      top: 3%;
+      left: 2%;
     }
 
     a.ivu-drawer-close {
@@ -60,7 +60,7 @@
     </i-button>
 
     <div id="switch">
-      <Checkbox v-model="opts.series[0].label.show">label</Checkbox>
+      label&nbsp;<Checkbox v-model="opts.series[0].label.show"></Checkbox>
     </div>
   </div>
 
@@ -174,9 +174,10 @@
       tooltip: {},
       legend: [{
         // selectedMode: 'single',
-        top: "top",
-        right: "5%",
+        top: "3%",
+        right: "2%",
         orient: "vertical",
+        align: "right",
         data: graph.categories.map(function (a) {
           return a.name;
         })
