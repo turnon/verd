@@ -27,6 +27,10 @@
     .ivu-drawer-body {
       overflow-y: scroll;
     }
+
+    .highlight {
+      background-color: yellow;
+    }
   </style>
   <script type="text/javascript" src="http://vuejs.org/js/vue.min.js"></script>
   <script type="text/javascript" src="http://unpkg.com/view-design/dist/iview.min.js"></script>
@@ -38,7 +42,7 @@
 <body>
   <div id="app">
     <Drawer placement="left" v-model="filter" :mask-closable="false" :mask="false" :draggable="true" :transfer="false">
-      <i-input v-model="keyword" @on-change="searchModel" style="width: calc(100% - 27px); margin-bottom: 10px;"></i-input>
+      <i-input v-model="keyword" style="width: calc(100% - 27px); margin-bottom: 10px;"></i-input>
       <Tree :data="relations" show-checkbox @on-check-change="selectRelation($event)" ref="filter-panel" />
     </Drawer>
     <Button @click="filter = !filter" type="primary">Open</Button>
@@ -211,11 +215,12 @@
         opts: opts,
         relations: relations
       },
+      watch: {
+        keyword() {
+          tree.search(this.keyword)
+        }
+      },
       methods: {
-        searchModel() {
-          let kw = this.keyword === "" ? /./ : new RegExp(this.keyword)
-          tree.show_only_when_match((txt) => { return txt.match(kw) })
-        },
         selectRelation(checkeds) {
           let checked_links = new Set(),
             checked_nodes = new Set()
@@ -291,7 +296,8 @@
     const Tree = (function () {
       const node_class_name = "ivu-tree-children",
         node_class = "." + node_class_name,
-        text_class = ".ivu-tree-title"
+        text_class = ".ivu-tree-title",
+        highlight_html = '<span class="highlight">$1</span>'
 
       class Tree {
         constructor(selector) {
@@ -299,8 +305,24 @@
           this.roots = n ? (new Node(n).this_and_siblings()) : []
         }
 
+        search(keyword) {
+          let kw = keyword === "" ? /./ : new RegExp(keyword)
+          this.show_only_when_match((txt) => { return txt.match(kw) })
+
+          if (keyword !== "") {
+            let repl = new RegExp('(' + keyword + ')')
+            this.highlight((txt) => { return txt.replace(repl, highlight_html) })
+          } else {
+            document.querySelectorAll('.highlight').forEach((n) => { n.parentNode.innerText = n.parentNode.innerText })
+          }
+        }
+
         show_only_when_match(fn) {
           this.roots.forEach((n) => { n.show_only_when_match(fn) })
+        }
+
+        highlight(fn) {
+          this.roots.forEach((n) => { n.highlight(fn) })
         }
       }
 
@@ -324,8 +346,20 @@
           return ss
         }
 
+        highlight(fn) {
+          if (!this.visible) {
+            return
+          }
+          this.title_node().innerHTML = fn(this.title_node().innerText)
+          this.children.forEach((c) => { c.highlight(fn) })
+        }
+
+        title_node() {
+          return this.raw_node.querySelector(text_class)
+        }
+
         show_only_when_match(fn) {
-          let text = this.raw_node.querySelector(text_class).innerText
+          let text = this.title_node().innerText
           if (fn(text)) {
             this.set_sub_tree_visible()
             return
