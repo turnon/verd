@@ -237,7 +237,7 @@
             checked_nodes = new Set()
 
           checkeds.forEach((c) => {
-            if (c.link_idx) {
+            if (c.link_idx !== undefined) {
               checked_links.add(c.link_idx)
               checked_nodes.add(graph.links[c.link_idx].source)
             }
@@ -307,7 +307,7 @@
     const Tree = (function () {
       const node_class_name = "ivu-tree-children",
         node_class = "." + node_class_name,
-        text_class = ".ivu-tree-title",
+        text_class = "label + span",
         highlight_html = '<span class="highlight">$1</span>'
 
       class Tree {
